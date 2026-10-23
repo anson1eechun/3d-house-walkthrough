@@ -25,6 +25,30 @@ const VERT_PARS = /* glsl */`
 varying vec3 vWetWorldPos;
 varying vec3 vWetWorldNormal;
 `;
+
+// Wind for exterior foliage: whole-crown sway (scaled by height in the tree) plus
+// per-leaf flutter. Stronger while it rains.
+const FOLIAGE = { leaves: 1, hedgeLeaves: 0.25 };
+const SWAY_PARS = /* glsl */`
+uniform float uTime;
+uniform float uWind;
+uniform float uSway;
+`;
+const SWAY_MAIN = /* glsl */`
+{
+  vec3 base = vec3(0.0);
+  #ifdef USE_INSTANCING
+    base = instanceMatrix[3].xyz;
+  #endif
+  float ph = dot(base.xz, vec2(0.37, 0.71));
+  float h = smoothstep(0.5, 7.0, position.y) * uSway;
+  float amp = (0.05 + 0.16 * uWind);
+  transformed.x += sin(uTime * 1.3 + ph) * amp * h;
+  transformed.z += cos(uTime * 1.1 + ph * 1.3) * amp * h * 0.7;
+  float fl = sin(uTime * (6.0 + 3.0 * uWind) + dot(position, vec3(3.1, 2.3, 2.9)) + ph);
+  transformed += normal * fl * (0.012 + 0.02 * uWind);
+}
+`;
 const VERT_MAIN = /* glsl */`
 {
   vec4 wwp = vec4(transformed, 1.0);
@@ -206,6 +230,13 @@ export class WetSurfaces {
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', '#include <common>\n' + VERT_PARS)
         .replace('#include <project_vertex>', '#include <project_vertex>\n' + VERT_MAIN);
+      if (FOLIAGE[mat.name]) {
+        shader.uniforms.uWind = g.uWind;
+        shader.uniforms.uSway = { value: FOLIAGE[mat.name] };
+        shader.vertexShader = shader.vertexShader
+          .replace('#include <common>', '#include <common>\n' + SWAY_PARS)
+          .replace('#include <begin_vertex>', '#include <begin_vertex>\n' + SWAY_MAIN);
+      }
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <common>', '#include <common>\n' + FRAG_PARS)
         .replace('#include <map_fragment>', '#include <map_fragment>\n' + FRAG_COLOR)
@@ -213,7 +244,7 @@ export class WetSurfaces {
         .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n' + FRAG_NORMAL)
         .replace('vec3 totalSpecular = reflectedLight.directSpecular + reflectedLight.indirectSpecular;', FRAG_SPEC);
     };
-    mat.customProgramCacheKey = () => 'wet-v1';
+    mat.customProgramCacheKey = () => (FOLIAGE[mat.name] ? 'wet-foliage-v1' : 'wet-v1');
     this.materials.push(mat);
   }
 }

@@ -12,11 +12,13 @@ const COUNTER = 0.92;    // worktop height above floor
 export function makeDrawer(kit, { w, h, d, x, y, z, front = 'greigeLacquer', handle = 'brass', bar = true }) {
   const g = kit.group();
   g.add(kit.rbox(w - 0.004, h - 0.004, 0.019, 0.003, front, 0, 0, 0));
-  const bw = w - 0.07, bh = Math.max(0.06, h * 0.62), bd = d - 0.06;
-  g.add(kit.box(bw, 0.012, bd, 'whiteMatte', 0, -h / 2 + 0.035, -bd / 2 - 0.01));
-  g.add(kit.box(0.012, bh, bd, 'whiteMatte', -bw / 2, -h / 2 + 0.035 + bh / 2, -bd / 2 - 0.01));
-  g.add(kit.box(0.012, bh, bd, 'whiteMatte', bw / 2, -h / 2 + 0.035 + bh / 2, -bd / 2 - 0.01));
-  g.add(kit.box(bw, bh, 0.012, 'whiteMatte', 0, -h / 2 + 0.035 + bh / 2, -bd - 0.01));
+  const bw = w - 0.07, bh = Math.max(0.06, h * 0.62), bd = d - 0.06, by = -h / 2 + 0.035;
+  g.add(kit.mergedBoxes([
+    [bw, 0.012, bd, 0, by, -bd / 2 - 0.01],
+    [0.012, bh, bd, -bw / 2, by + bh / 2, -bd / 2 - 0.01],
+    [0.012, bh, bd, bw / 2, by + bh / 2, -bd / 2 - 0.01],
+    [bw, bh, 0.012, 0, by + bh / 2, -bd - 0.01],
+  ], 'whiteMatte'));
   if (bar) g.add(kit.box(Math.min(0.4, w * 0.5), 0.012, 0.022, handle, 0, h / 2 - 0.05, 0.02));
   g.position.set(x, y, z);
   kit.dynamic(g);

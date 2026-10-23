@@ -51,7 +51,8 @@ class ScenePass extends Pass {
   dispose() { this.msaaRT?.dispose(); this.copy.dispose(); }
 }
 
-// GTAO that ignores glass, rain and other main-only overlays in its normal pass.
+// GTAO that ignores glass, rain and other main-only overlays in its normal pass, and
+// alpha-tested foliage (the override normal material would draw leaf cards as solid quads).
 class HouseGTAOPass extends GTAOPass {
   constructor(...args) {
     super(...args);
@@ -64,7 +65,8 @@ class HouseGTAOPass extends GTAOPass {
     const mask = 1 << LAYER.MAIN_ONLY;
     this.scene.traverse((o) => {
       if (!o.visible) return;
-      if (o.isPoints || o.isLine || o.isLine2 || o.userData.isSky || ((o.layers.mask & mask) && !(o.layers.mask & 1) && !(o.layers.mask & (1 << LAYER.GROUND)))) {
+      const foliage = o.material && o.material.alphaTest > 0;
+      if (foliage || o.isPoints || o.isLine || o.isLine2 || o.userData.isSky || ((o.layers.mask & mask) && !(o.layers.mask & 1) && !(o.layers.mask & (1 << LAYER.GROUND)))) {
         o.visible = false;
         cache.push(o);
       }

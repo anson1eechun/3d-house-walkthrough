@@ -233,7 +233,8 @@ export function createExterior(ctx) {
 
   const shrubs = [];
   for (let z = -6.2; z <= 6.2; z += 1.25) shrubs.push({ x: -12.7, z, r: 0.42 + rnd() * 0.15 });
-  for (let x = 1.0; x <= 12.6; x += 1.3) shrubs.push({ x, z: -7.75, r: 0.4 + rnd() * 0.15 });
+  // (no shrubs under the operable bedroom casements, which swing outwards)
+  for (let x = 1.0; x <= 12.6; x += 1.3) if (!(x > 4.3 && x < 6.0) && !(x > 10.2 && x < 12.1)) shrubs.push({ x, z: -7.75, r: 0.4 + rnd() * 0.15 });
   for (let z = -6.0; z <= 0.4; z += 1.3) shrubs.push({ x: 13.75, z, r: 0.4 + rnd() * 0.12 });
   for (const [x, z] of [[13.4, 7.1], [0.7, 7.1], [-0.6, -12.4], [-11.4, -12.4]]) shrubs.push({ x, z, r: 0.55 });
   buildShrubs(ctx, shrubs, M.get('hedgeLeaves'));

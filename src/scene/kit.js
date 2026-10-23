@@ -6,6 +6,7 @@
 
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { boxProjectUV } from './builder.js';
 import { FLOOR_Y } from './layout.js';
 
@@ -73,6 +74,13 @@ export class Kit {
   // Tube along a curve (lamp arms, taps, rails).
   tube(key, points, radius, mat, seg = 32) {
     const g = this._geo('u' + key, () => new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p))), seg, radius, 10, false));
+    return this.mesh(g, mat);
+  }
+
+  // Several boxes sharing one material as a single mesh: [[w, h, d, x, y, z], ...]
+  mergedBoxes(list, mat) {
+    const key = 'mb' + list.map(b => b.join(',')).join(';');
+    const g = this._geo(key, () => mergeGeometries(list.map(([w, h, d, x, y, z]) => boxProjectUV(new THREE.BoxGeometry(w, h, d), 1).translate(x, y, z)), false));
     return this.mesh(g, mat);
   }
 

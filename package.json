@@ -1,0 +1,22 @@
+{
+  "name": "3d-house-walkthrough",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Real-time, offline 3D house walkthrough built with three.js (WebGL2): first-person exploration, interactive doors/windows/lights/cabinets, dynamic weather and time of day.",
+  "type": "module",
+  "scripts": {
+    "start": "node serve.mjs",
+    "start:python": "python3 serve.py",
+    "test": "node tools/test-collision.mjs && node tools/smoke-test.mjs",
+    "test:unit": "node tools/test-collision.mjs",
+    "test:smoke": "node tools/smoke-test.mjs",
+    "vendor:update": "node tools/update-vendor.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "vendored": {
+    "three": "0.186.1"
+  },
+  "license": "MIT"
+}

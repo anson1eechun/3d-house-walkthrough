@@ -1,5 +1,7 @@
 // Persistent user settings + the pause menu bindings.
 
+import { FloorPlan, SPAWNS } from './floorplan.js';
+
 const KEY = 'house-walkthrough-settings-v1';
 const DEFAULTS = {
   quality: null,          // chosen from GPU heuristics when null
@@ -9,6 +11,7 @@ const DEFAULTS = {
   rainDensity: 0.75,
   headBob: true,
   showStats: false,
+  showMap: false,
 };
 
 export function loadSettings() {
@@ -31,6 +34,8 @@ export function guessQuality(gpu) {
 }
 
 const $ = (id) => document.getElementById(id);
+
+export { SPAWNS };
 
 export class PauseMenu {
   constructor(app) {
@@ -72,6 +77,8 @@ export class PauseMenu {
     };
     chk('chk-bob', 'headBob');
     chk('chk-stats', 'showStats', v => app.hud.showStats(v));
+    chk('chk-map', 'showMap', v => app.hud.showMap(v));
+    this.plan = new FloorPlan($('plan'), { interactive: true, onPick: (id) => app.goTo(id) });
 
     $('btn-resume').addEventListener('click', (e) => { e.stopPropagation(); app.resume(); });
     $('btn-reset').addEventListener('click', () => { app.resetPlayer(); app.resume(); });
@@ -96,6 +103,14 @@ export class PauseMenu {
 
   show(v) {
     this.el.classList.toggle('hidden', !v);
-    if (v) { this.syncers.forEach(f => f()); this.renderLights(); }
+    this.visible = v;
+    if (v) {
+      this.syncers.forEach(f => f()); this.renderLights();
+      $('chk-map').checked = !!this.app.settings.showMap;
+      this.plan.resize(); this.plan.draw(this.app.player);
+    }
   }
+
+  // Redraw the plan while the menu is open (hover highlight).
+  tick() { if (this.visible) this.plan.draw(this.app.player); }
 }

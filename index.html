@@ -44,6 +44,7 @@
           </label>
         </div>
         <p class="gpu-info" id="gpu-info"></p>
+        <p class="touch-note hidden" id="touch-note">此導覽需要鍵盤與滑鼠操作（WASD 移動、滑鼠轉動視角），建議使用桌上型或筆記型電腦開啟。</p>
       </div>
       <div class="start-right">
         <h2>操作說明</h2>
@@ -57,6 +58,7 @@
           <li><kbd>T</kbd><span>切換時段（白天 / 黃昏 / 夜晚）</span></li>
           <li><kbd>L</kbd><span>全屋燈光開 / 關</span></li>
           <li><kbd>B</kbd><span>回到起點</span></li>
+          <li><kbd>M</kbd><span>小地圖</span></li>
           <li><kbd>P</kbd><span>顯示效能資訊</span></li>
           <li><kbd>Esc</kbd><span>釋放滑鼠 / 開啟選單</span></li>
         </ul>
@@ -76,6 +78,7 @@
     <div class="toast hidden" id="toast"></div>
     <div class="hint" id="hint">F 互動　·　R 天氣　·　T 時段　·　Esc 選單</div>
     <pre class="stats hidden" id="stats"></pre>
+    <canvas class="minimap hidden" id="minimap"></canvas>
   </section>
 
   <!-- Pause / settings -->
@@ -85,6 +88,12 @@
         <h2>暫停</h2>
         <button id="btn-resume" class="primary">繼續探索</button>
       </header>
+      <div class="pause-layout">
+      <div class="plan-col">
+        <h3>平面圖</h3>
+        <canvas id="plan" class="plan"></canvas>
+        <p class="note">點擊房間即可直接前往。尺寸依牆體中心線計算。</p>
+      </div>
       <div class="panel-grid">
         <div class="group">
           <h3>環境</h3>
@@ -117,8 +126,10 @@
         <div class="group">
           <h3>其他</h3>
           <div class="row"><button id="btn-reset">回到起點</button></div>
-          <p class="note">在畫面任意處點擊即可回到探索模式。關閉的門會阻擋通行，以 F 開門後即可穿越。</p>
+          <label class="check"><input type="checkbox" id="chk-map">顯示小地圖（M）</label>
+          <p class="note">在畫面空白處點擊即可回到探索模式。關閉的門會阻擋通行，以 F 開門後即可穿越。</p>
         </div>
+      </div>
       </div>
     </div>
   </section>

@@ -41,6 +41,7 @@ export class WeatherSystem {
     g.uWetness.value = this.wetness;
     g.uGlassRain.value = this.glass * (0.55 + 0.45 * this.density);
     g.uGlassMist.value = this.glass * 0.7;
+    g.uWind.value = 0.25 + 0.75 * this.amount;
     this.rain.setIntensity(intensity);
 
     // Streak colour follows the sky brightness (rain is mostly seen by refracted skylight).

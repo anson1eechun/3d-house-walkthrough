@@ -1,4 +1,6 @@
-// In-game HUD: room name, chips, crosshair, interaction prompt, toasts, stats.
+// In-game HUD: room name, chips, crosshair, interaction prompt, toasts, stats, minimap.
+
+import { FloorPlan } from './floorplan.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -13,6 +15,8 @@ export class HUD {
     this.toastEl = $('toast');
     this.statsEl = $('stats');
     this.hintEl = $('hint');
+    this.minimapEl = $('minimap');
+    this.minimap = null;
     this._room = '';
     this._promptKey = '';
     this._toastTimer = 0;
@@ -63,5 +67,13 @@ export class HUD {
   fadeHint() { setTimeout(() => { this.hintEl.style.opacity = '0'; }, 9000); }
 
   showStats(v) { this.statsEl.classList.toggle('hidden', !v); }
+
+  showMap(v) {
+    this.minimapEl.classList.toggle('hidden', !v);
+    if (v && !this.minimap) this.minimap = new FloorPlan(this.minimapEl);
+    if (v) this.minimap.resize();
+    this.mapVisible = v;
+  }
+  drawMap(player) { if (this.mapVisible) this.minimap.draw(player, { compact: true }); }
   setStats(text) { this.statsEl.textContent = text; }
 }

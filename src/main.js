@@ -24,7 +24,7 @@ import { PlanarReflection } from './rendering/planarReflection.js';
 import { QUALITY, QUALITY_LABEL } from './rendering/quality.js';
 import { AudioSystem } from './core/audio.js';
 import { HUD } from './ui/hud.js';
-import { loadSettings, saveSettings, guessQuality, PauseMenu } from './ui/settings.js';
+import { loadSettings, saveSettings, guessQuality, PauseMenu, SPAWNS } from './ui/settings.js';
 import { LAYER } from './core/layers.js';
 
 const START = { x: 8.6, z: 15.5, yaw: 0.12, pitch: 0.02 };
@@ -46,6 +46,7 @@ class App {
     this.settings = loadSettings();
     if (!this.settings.quality) this.settings.quality = guessQuality(this.gpu);
     $('gpu-info').textContent = this.gpu.renderer ? `GPU：${this.gpu.renderer}` : '';
+    if (window.matchMedia?.('(pointer: coarse)').matches && !window.matchMedia('(any-pointer: fine)').matches) $('touch-note').classList.remove('hidden');
 
     const canvas = $('viewport');
     this.renderer = createRenderer(canvas);
@@ -62,7 +63,7 @@ class App {
       uRain: { value: 0 },
       uGlassRain: { value: 0 },
       uGlassMist: { value: 0 },
-      uPuddles: { value: 0 },
+      uWind: { value: 0.25 },
     };
     this.hud = new HUD();
     this.collision = new CollisionWorld(2);
@@ -208,6 +209,7 @@ class App {
         case 'KeyL': { const on = !this.lighting.anyOn(); this.lighting.setAll(on); this.hud.toast(on ? '全屋燈光：開啟' : '全屋燈光：關閉'); break; }
         case 'KeyB': this.resetPlayer(); this.hud.toast('已回到起點'); break;
         case 'KeyP': this.settings.showStats = !this.settings.showStats; this.hud.showStats(this.settings.showStats); saveSettings(this.settings); break;
+        case 'KeyM': this.settings.showMap = !this.settings.showMap; this.hud.showMap(this.settings.showMap); saveSettings(this.settings); break;
         default: break;
       }
     });
@@ -219,6 +221,7 @@ class App {
     $('start').classList.add('hidden');
     this.hud.show(true);
     this.hud.showStats(this.settings.showStats);
+    this.hud.showMap(this.settings.showMap);
     this.hud.fadeHint();
     this.player.lock();
   }
@@ -237,6 +240,16 @@ class App {
   }
 
   resetPlayer() { this.player.teleport(START.x, START.z, START.yaw, START.pitch); }
+
+  // Floor plan "go to room".
+  goTo(id) {
+    const s = SPAWNS[id];
+    if (!s) return;
+    this.player.teleport(s[0], s[1], s[2], -0.05);
+    this.hud.toast('已前往：' + areaNameAt(s[0], s[1]));
+    this.pause.show(false);
+    this.resume();
+  }
 
   setWeather(w) {
     this.env.setWeather(w);
@@ -339,8 +352,15 @@ class App {
   updateHUD(dt) {
     const p = this.player.position;
     this.hud.setRoom(areaNameAt(p.x, p.z));
-    this.hud.setSub(`${TIME_LABEL[this.env.time]} · ${WEATHER_LABEL[this.env.weather]}`);
+    const subKey = this.env.time + this.env.weather + this.settings.quality;
+    if (subKey !== this._subKey) {
+      this._subKey = subKey;
+      this.hud.setSub(`${TIME_LABEL[this.env.time]} · ${WEATHER_LABEL[this.env.weather]}`);
+      this.hud.setChips([QUALITY_LABEL[this.settings.quality] + '畫質']);
+    }
     this._fpsAcc = (this._fpsAcc || 0) + dt; this._fpsN = (this._fpsN || 0) + 1;
+    this._mapAcc = (this._mapAcc || 0) + dt;
+    if (this._mapAcc > 0.1) { this._mapAcc = 0; this.hud.drawMap(this.player); this.pause?.tick(); }
     if (this._fpsAcc > 0.5) {
       this.fps = this._fpsN / this._fpsAcc; this._fpsAcc = 0; this._fpsN = 0;
       if (this.settings.showStats) {
@@ -357,7 +377,6 @@ class App {
         ].join('\n'));
       }
     }
-    this.hud.setChips([QUALITY_LABEL[this.settings.quality] + '畫質']);
   }
 }
 
