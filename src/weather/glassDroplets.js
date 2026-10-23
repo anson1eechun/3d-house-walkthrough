@@ -127,7 +127,11 @@ function patchDroplets(mat, globals) {
     shader.uniforms.uTime = globals.uTime;
     shader.uniforms.uGlassRain = globals.uGlassRain;
     shader.uniforms.uGlassMist = globals.uGlassMist;
+    // The lines we patch live inside chunks, which are still #include directives
+    // at this point: inline the chunk sources first, then edit them.
     shader.fragmentShader = shader.fragmentShader
+      .replace('#include <normal_fragment_maps>', THREE.ShaderChunk.normal_fragment_maps)
+      .replace('#include <transmission_fragment>', THREE.ShaderChunk.transmission_fragment)
       .replace('#include <normalmap_pars_fragment>', '#include <normalmap_pars_fragment>\n' + DROPS_GLSL)
       .replace(
         'vec3 mapN = texture2D( normalMap, vNormalMapUv ).xyz * 2.0 - 1.0;',
@@ -140,7 +144,7 @@ function patchDroplets(mat, globals) {
         'material.thickness = thickness;',
         'material.thickness = thickness + gDropMask * 0.28;');
   };
-  mat.customProgramCacheKey = () => 'glass-droplets-v1';
+  mat.customProgramCacheKey = () => 'glass-droplets-v2';
 }
 
 // Low quality: plain alpha-blended glass (no transmission pass).

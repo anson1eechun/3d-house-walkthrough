@@ -122,7 +122,9 @@ export class RainSystem {
     const maxStreaks = 30000, maxSplashes = 3000;
     this.occRT = new THREE.WebGLRenderTarget(OCC_RES, OCC_RES, { type: THREE.HalfFloatType, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: true });
     this.occRT.texture.name = 'rainOcclusion';
-    const occRect = new THREE.Vector4(...OCC_RECT);
+    // The top-down capture camera has screen-up = -z, so texture v runs towards -z:
+    // encode the rect as (x0, z1, sizeX, -sizeZ) so uv = (p.xz - rect.xy) / rect.zw.
+    const occRect = new THREE.Vector4(OCC_RECT[0], OCC_RECT[1] + OCC_RECT[3], OCC_RECT[2], -OCC_RECT[3]);
     this.uniforms = {
       uTime: ctx.globals.uTime, uBox: { value: new THREE.Vector3(34, 20, 34) }, uCam: { value: new THREE.Vector3() },
       uSpeed: { value: 9.0 }, uWind: { value: new THREE.Vector2(0.9, 0.35) }, uIntensity: { value: 0 },

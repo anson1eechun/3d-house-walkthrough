@@ -25,6 +25,7 @@ export function createWaterMaterial(globals, wet) {
       .replace('#include <common>', '#include <common>\nvarying vec3 vWaterPos;')
       .replace('#include <project_vertex>', '#include <project_vertex>\nvWaterPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
     shader.fragmentShader = shader.fragmentShader
+      .replace('#include <normal_fragment_maps>', THREE.ShaderChunk.normal_fragment_maps)
       .replace('#include <common>', `#include <common>
         uniform float uTime; uniform float uRain;
         uniform sampler2D uReflTex; uniform mat4 uReflMatrix; uniform float uReflOn;
@@ -66,6 +67,6 @@ export function createWaterMaterial(globals, wet) {
           totalSpecular = totalSpecular * (1.0 - k) + refl * k;
         }`);
   };
-  m.customProgramCacheKey = () => 'water-v1';
+  m.customProgramCacheKey = () => 'water-v2';
   return m;
 }

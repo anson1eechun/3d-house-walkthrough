@@ -47,6 +47,7 @@ uniform float uMacro;
 uniform sampler2D uReflTex;
 uniform mat4 uReflMatrix;
 uniform float uReflOn;
+uniform float uWetDebug;
 uniform sampler2D uOcc;
 uniform vec4 uOccRect;
 varying vec3 vWetWorldPos;
@@ -146,13 +147,23 @@ if (uReflOn > 0.5 && uWetCfg.z > 0.5 && (gWet > 0.0)) {
   float lod = clamp(roughnessFactor * 9.0, 0.0, 6.0);
   vec3 refl = textureLod(uReflTex, ruv, lod).rgb;
   float NoV = saturate(dot(normal, geometryViewDir));
-  float fres = 0.02 + 0.98 * pow(1.0 - NoV, 5.0);
-  float k = fres * mix(gWet * 0.35 * uWetCfg.x, 1.0, gPuddle);
+  // puddles: softened Fresnel so the mirror image reads at walking-eye angles;
+  // plain wet ground: a weaker, blurrier sheen
+  float fresP = 0.06 + 0.94 * pow(1.0 - NoV, 2.5);
+  float fresW = 0.02 + 0.98 * pow(1.0 - NoV, 4.0);
+  float k = mix(fresW * gWet * 0.55 * uWetCfg.x, fresP * 0.92, gPuddle);
   // fade out where the projected lookup leaves the reflection texture
   vec2 edge = smoothstep(vec2(0.0), vec2(0.04), ruv) * smoothstep(vec2(1.0), vec2(0.96), ruv);
   k *= edge.x * edge.y;
   totalSpecular = totalSpecular * (1.0 - k) + refl * k;
-  totalDiffuse *= 1.0 - gPuddle * 0.6;
+  totalDiffuse *= 1.0 - gPuddle * 0.45;
+  if (uWetDebug > 0.5) {
+    if (uWetDebug < 1.5) { totalDiffuse = refl; totalSpecular = vec3(0.0); }
+    else if (uWetDebug < 2.5) { totalDiffuse = vec3(gPuddle, gWet, 0.0); totalSpecular = vec3(0.0); }
+    else if (uWetDebug < 3.5) { totalDiffuse = vec3(k); totalSpecular = vec3(0.0); }
+    else if (uWetDebug < 4.5) { totalDiffuse = vec3(0.0); }
+    else { totalSpecular = vec3(0.0); }
+  }
 }
 `;
 
@@ -161,6 +172,7 @@ export class WetSurfaces {
     this.globals = globals;
     this.refl = { uReflTex: { value: null }, uReflMatrix: { value: new THREE.Matrix4() }, uReflOn: { value: 0 } };
     this.occ = { uOcc: { value: null }, uOccRect: { value: new THREE.Vector4(0, 0, 1, 1) } };
+    this.debug = { value: 0 };   // 1: reflection, 2: puddle/wet masks, 3: reflection weight
     this.materials = [];
   }
 
@@ -190,6 +202,7 @@ export class WetSurfaces {
       shader.uniforms.uReflOn = self.refl.uReflOn;
       shader.uniforms.uOcc = self.occ.uOcc;
       shader.uniforms.uOccRect = self.occ.uOccRect;
+      shader.uniforms.uWetDebug = self.debug;
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', '#include <common>\n' + VERT_PARS)
         .replace('#include <project_vertex>', '#include <project_vertex>\n' + VERT_MAIN);

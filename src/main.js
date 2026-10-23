@@ -315,7 +315,10 @@ class App {
     }
     this.renderer.info.reset();
     this.probes.update(dt);
-    this.reflection.update(this.weather.reflectionNeeded);
+    // planar reflection: wet ground, or the pool (its water uses the same mirror plane)
+    const cp = this.camera.position;
+    const nearPool = Math.hypot(cp.x + 6, cp.z + 16.5) < 32;
+    this.reflection.update(this.weather.reflectionNeeded || nearPool);
     this.post.render(dt);
     this._cpuMs = performance.now() - t0;
   }
