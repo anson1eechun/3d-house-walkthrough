@@ -86,11 +86,12 @@ class ExposurePass extends Pass {
     this.adaptQuad = new FullScreenQuad(mat(S.adaptFragment, { tCurrent: { value: null }, tPrevious: { value: null }, uDt: { value: 0 }, uReset: { value: 1 } }));
     this.applyQuad = new FullScreenQuad(mat(S.exposureFragment, {
       tDiffuse: { value: null }, tAdapted: { value: null }, uAuto: { value: 1 }, uManual: { value: 1 },
-      uComp: { value: 0 }, uKey: { value: 0.15 }, uRange: { value: new THREE.Vector2(0.3, 9.0) }, uAdapt: { value: 0.82 },
+      uComp: { value: 0 }, uKey: { value: 0.15 }, uRange: { value: new THREE.Vector2(0.3, 9.0) }, uAdapt: { value: 0.88 },
     }));
     this.flip = 0;
     this.dt = 0.016;
     this.auto = true;
+    this.fold = false;      // when true only metering runs; FinalPass applies the exposure
   }
   render(renderer, writeBuffer, readBuffer) {
     const u = this.applyQuad.material.uniforms;
@@ -112,6 +113,8 @@ class ExposurePass extends Pass {
       u.tAdapted.value = next.texture;
     }
     u.uAuto.value = this.auto ? 1 : 0;
+    this.needsSwap = !this.fold;
+    if (this.fold) return;
     u.tDiffuse.value = readBuffer.texture;
     renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
     this.applyQuad.render(renderer);
@@ -130,9 +133,12 @@ class ExposurePass extends Pass {
 }
 
 class FinalPass extends Pass {
-  constructor() {
+  constructor(exposure) {
     super();
+    const eu = exposure.applyQuad.material.uniforms;
+    this.exposure = exposure;
     this.quad = new FullScreenQuad(mat(S.finalFragment, {
+      tAdapted: eu.tAdapted, uFoldExposure: { value: 0 }, uKey: eu.uKey, uRange: eu.uRange, uAdapt: eu.uAdapt, uComp: eu.uComp,
       tDiffuse: { value: null }, uSaturation: { value: 1.0 }, uContrast: { value: 1.05 },
       uLift: { value: new THREE.Vector3(0.006, 0.006, 0.009) }, uGain: { value: new THREE.Vector3(0.99, 1.0, 1.01) },
       uVignette: { value: 0.22 }, uResolution: { value: new THREE.Vector2(1, 1) },
@@ -141,6 +147,7 @@ class FinalPass extends Pass {
   setSize(w, h) { this.quad.material.uniforms.uResolution.value.set(w, h); }
   render(renderer, writeBuffer, readBuffer) {
     this.quad.material.uniforms.tDiffuse.value = readBuffer.texture;
+    this.quad.material.uniforms.uFoldExposure.value = this.exposure.fold ? 1 : 0;
     renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
     this.quad.render(renderer);
   }
@@ -161,11 +168,10 @@ export class PostProcessing {
     this.exposure = new ExposurePass();
     this.bloom = new UnrealBloomPass(new THREE.Vector2(size.x, size.y), 0.22, 0.42, 2.6);
     this.bloom.highPassUniforms.smoothWidth.value = 0.8;
-    this.final = new FinalPass();
+    this.final = new FinalPass(this.exposure);
     this.fxaa = new FXAAPass();
     this.smaa = new SMAAPass();
     for (const p of [this.scenePass, this.gtao, this.exposure, this.bloom, this.final, this.fxaa, this.smaa]) this.composer.addPass(p);
-    this.manualExposure = 1;
   }
 
   applyQuality(Q) {
@@ -176,7 +182,8 @@ export class PostProcessing {
     this.bloom.enabled = Q.bloom;
     this.fxaa.enabled = Q.aa === 'fxaa';
     this.smaa.enabled = Q.aa === 'smaa';
-    this.exposure.auto = Q.autoExposure;
+    this.exposure.auto = true;
+    this.exposure.fold = !Q.bloom;
     this.exposure.reset();
   }
 
@@ -189,7 +196,6 @@ export class PostProcessing {
 
   render(dt) {
     this.exposure.dt = dt;
-    this.exposure.applyQuad.material.uniforms.uManual.value = this.manualExposure;
     this.composer.render(dt);
   }
 }

@@ -17,7 +17,7 @@ export function createInterior(ctx) {
     livingLamp: L.group('livingLamp', '客廳立燈', { zone: 'public' }),
     dining: L.group('dining', '餐廳', { zone: 'public' }),
     kitchen: L.group('kitchen', '廚房', { zone: 'public' }),
-    hall: L.group('hall', '玄關與走廊', { zone: 'hall' }),
+    hall: L.group('hall', '玄關與走廊', { zone: 'hall', on: true }),
     bath: L.group('bath', '浴室', { zone: 'bath' }),
     bed1: L.group('bed1', '主臥室', { zone: 'bed1' }),
     bed1Lamp: L.group('bed1Lamp', '主臥床頭燈', { zone: 'bed1' }),

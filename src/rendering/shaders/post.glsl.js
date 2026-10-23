@@ -85,6 +85,12 @@ void main() {
 // ACES filmic (same fit as three.js) + light grading + vignette + sRGB encode + dither.
 export const finalFragment = /* glsl */`
 uniform sampler2D tDiffuse;
+uniform sampler2D tAdapted;
+uniform float uFoldExposure;
+uniform float uKey;
+uniform vec2 uRange;
+uniform float uAdapt;
+uniform float uComp;
 uniform float uSaturation;
 uniform float uContrast;
 uniform vec3 uLift;
@@ -115,6 +121,11 @@ vec3 toSRGB(vec3 c) {
 float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 void main() {
   vec3 c = texture2D(tDiffuse, vUv).rgb;
+  if (uFoldExposure > 0.5) {
+    // exposure folded in here when there is no bloom pass in between (low quality)
+    float avg = max(exp(texture2D(tAdapted, vec2(0.5)).r), 1e-4);
+    c *= clamp(uKey / (pow(uKey, 1.0 - uAdapt) * pow(avg, uAdapt)), uRange.x, uRange.y) * exp2(uComp);
+  }
   c = ACESFilmic(c);
   // grading in display-referred space
   float l = dot(c, vec3(0.2126, 0.7152, 0.0722));

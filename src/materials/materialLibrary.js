@@ -16,7 +16,7 @@ export class MaterialLibrary {
     this.zoned = new Map();       // `${uuid}|${zone}` -> clone
     this.zoneEnv = {};            // zone -> env texture
     this.patchers = [];           // functions(material) applied on creation (wetness etc.)
-    this.zoneEnvIntensity = 1.5;
+    this.zoneEnvIntensity = 2.1;
   }
 
   tex(name, set, tile) {
@@ -53,21 +53,21 @@ export class MaterialLibrary {
     const S = (label, fn) => steps.push([label, fn]);
 
     S('木地板', () => {
-      const t = this.tex('oak', T.woodTexture(1024, { seed: 3, base: [194, 166, 136], dark: [146, 118, 92], rows: 12, cuts: 2, roughness: 0.46, variation: 0.1, gap: 1.0, gapDark: 0.62 }), 2.4);
+      const t = this.tex('oak', T.woodTexture(1024, { seed: 3, base: [206, 182, 152], dark: [164, 138, 108], rows: 12, cuts: 2, roughness: 0.46, variation: 0.1, gap: 1.0, gapDark: 0.62 }), 2.4);
       this.std('oak', t, { normalScale: 0.6 });
     });
     S('胡桃木', () => {
-      const t = this.tex('walnut', T.woodTexture(1024, { seed: 7, base: [124, 104, 88], dark: [76, 62, 52], rows: 1, cuts: 0, gap: -1, ringFreq: 14, knots: false, roughness: 0.38, variation: 0.05 }), 1.2);
+      const t = this.tex('walnut', T.woodTexture(512, { seed: 7, base: [146, 120, 98], dark: [92, 74, 60], rows: 1, cuts: 0, gap: -1, ringFreq: 14, knots: false, roughness: 0.38, variation: 0.05 }), 1.2);
       this.std('walnut', t, { normalScale: 0.4 });
-      const t2 = this.tex('oakLight', T.woodTexture(1024, { seed: 9, base: [204, 178, 142], dark: [160, 128, 92], rows: 1, cuts: 0, gap: -1, ringFreq: 11, knots: false, roughness: 0.45, variation: 0.04 }), 1.2);
+      const t2 = this.tex('oakLight', T.woodTexture(512, { seed: 9, base: [204, 178, 142], dark: [160, 128, 92], rows: 1, cuts: 0, gap: -1, ringFreq: 11, knots: false, roughness: 0.45, variation: 0.04 }), 1.2);
       this.std('oakLight', t2, { normalScale: 0.4 });
     });
     S('石材磁磚', () => {
-      const t = this.tex('stoneTile', T.tileTexture(1024, { seed: 41, cols: 2, rows: 2, base: [176, 169, 158], grout: [140, 135, 128], roughness: 0.32, veins: 0.18, spread: 0.04 }), 1.2);
+      const t = this.tex('stoneTile', T.tileTexture(512, { seed: 41, cols: 2, rows: 2, base: [176, 169, 158], grout: [140, 135, 128], roughness: 0.32, veins: 0.18, spread: 0.04 }), 1.2);
       this.std('stoneTile', t, { normalScale: 0.5 });
-      const b = this.tex('bathTile', T.tileTexture(1024, { seed: 43, cols: 2, rows: 2, base: [118, 116, 112], grout: [88, 86, 84], roughness: 0.42, veins: 0.12, spread: 0.06 }), 1.2);
+      const b = this.tex('bathTile', T.tileTexture(512, { seed: 43, cols: 2, rows: 2, base: [118, 116, 112], grout: [88, 86, 84], roughness: 0.42, veins: 0.12, spread: 0.06 }), 1.2);
       this.std('bathTile', b, { normalScale: 0.5 });
-      const w = this.tex('bathWallTile', T.tileTexture(1024, { seed: 45, cols: 4, rows: 2, base: [226, 222, 214], grout: [196, 192, 186], groutW: 2, roughness: 0.12, veins: 0.05, spread: 0.025, stagger: false }), [1.2, 1.2]);
+      const w = this.tex('bathWallTile', T.tileTexture(512, { seed: 45, cols: 4, rows: 2, base: [226, 222, 214], grout: [196, 192, 186], groutW: 2, roughness: 0.12, veins: 0.05, spread: 0.025, stagger: false }), [1.2, 1.2]);
       this.std('bathWallTile', w, { normalScale: 0.6 });
     });
     S('牆面', () => {
@@ -75,12 +75,12 @@ export class MaterialLibrary {
       this.std('plaster', t, { normalScale: 0.1 });
       const c = this.retile(t, 2.5);
       this.std('ceiling', c, { color: 0xfbfaf8, normalScale: 0.05 });
-      const s = this.tex('stucco', T.plasterTexture(1024, { seed: 13, base: [228, 226, 220], strength: 2.2, roughness: 0.92 }), 3.0);
-      this.std('stucco', s, { normalScale: 0.8 });
+      const s = this.tex('stucco', T.plasterTexture(512, { seed: 13, base: [228, 226, 220], strength: 2.2, roughness: 0.92 }), 3.0);
+      this.std('stucco', s, { normalScale: 0.35 });
       this.std('soffit', this.retile(t, 2.0), { color: 0xf0eee8, normalScale: 0.1 });
     });
     S('外牆木飾板', () => {
-      const t = this.tex('cladding', T.woodTexture(1024, { seed: 17, base: [164, 126, 92], dark: [112, 82, 58], rows: 10, cuts: 0, gap: 2.2, ringFreq: 6, roughness: 0.62, variation: 0.12, knots: true }), [1.2, 1.2]);
+      const t = this.tex('cladding', T.woodTexture(512, { seed: 17, base: [164, 126, 92], dark: [112, 82, 58], rows: 10, cuts: 0, gap: 2.2, ringFreq: 6, roughness: 0.62, variation: 0.12, knots: true }), [1.2, 1.2]);
       // Boards run vertically: rotate the texture 90 degrees.
       for (const k of ['map', 'orm', 'normal']) { t[k].rotation = Math.PI / 2; }
       this.std('cladding', t, { normalScale: 0.9 });
@@ -98,7 +98,7 @@ export class MaterialLibrary {
       this.std('coping', c, { normalScale: 0.6 });
     });
     S('戶外木平台', () => {
-      const t = this.tex('deck', T.woodTexture(1024, { seed: 27, base: [146, 112, 82], dark: [96, 70, 50], rows: 20, cuts: 1, gap: 3.0, roughness: 0.7, weathered: 0.35 }), 2.8);
+      const t = this.tex('deck', T.woodTexture(512, { seed: 27, base: [146, 112, 82], dark: [96, 70, 50], rows: 20, cuts: 1, gap: 3.0, roughness: 0.7, weathered: 0.35 }), 2.8);
       this.std('deck', t, { normalScale: 0.9 });
       const f = this.retile(t, 2.0);
       for (const k of ['map', 'orm', 'normal']) { f[k].rotation = 0; }
@@ -109,7 +109,7 @@ export class MaterialLibrary {
       this.std('grass', t, { normalScale: 0.7, aoMapIntensity: 0.6 });
     });
     S('大理石', () => {
-      const t = this.tex('marble', T.marbleTexture(1024, { seed: 51 }), 1.6);
+      const t = this.tex('marble', T.marbleTexture(512, { seed: 51 }), 1.6);
       this.std('marble', t, { normalScale: 0.2 }, true).clearcoat = 0.35;
       const d = this.tex('marbleDark', T.marbleTexture(512, { seed: 53, base: [52, 50, 50], vein: [150, 146, 140], roughness: 0.18 }), 1.2);
       this.std('marbleDark', d, { normalScale: 0.2 });
@@ -122,11 +122,11 @@ export class MaterialLibrary {
         return m;
       };
       fab('fabricSofa', 0xb9ae9c, 0.6, 0xe8dfd0);
-      fab('fabricCharcoal', 0x4a4a4c, 0.5, 0x8a8a8c);
+      fab('fabricCharcoal', 0x5e5c5a, 0.5, 0x9a9896);
       fab('fabricBlue', 0x5e6f7c, 0.6, 0x9fb2c0);
       fab('fabricRust', 0x9a5a3c, 0.6, 0xd4946c);
       fab('linen', 0xefece6, 0.35, 0xffffff);
-      fab('fabricOlive', 0x77775a, 0.5, 0xb5b58c);
+      fab('fabricOlive', 0x8a8a6c, 0.5, 0xc0c09a);
       const tc = this.retile(t, 0.6);
       const cur = this.std('curtain', tc, { color: 0xe6e0d6, normalScale: 0.4, side: THREE.DoubleSide }, true);
       cur.sheen = 0.4; cur.sheenRoughness = 0.7; cur.sheenColor = new THREE.Color(0xffffff);
@@ -155,18 +155,18 @@ export class MaterialLibrary {
       this.std('greigeLacquer', null, { color: 0x9d9488, roughness: 0.4 }, true).clearcoat = 0.3;
       this.std('whiteMatte', null, { color: 0xf0eeea, roughness: 0.55 });
       this.std('rubber', null, { color: 0x121212, roughness: 0.7 });
-      this.std('leather', null, { color: 0x6b3f26, roughness: 0.55 }, true).clearcoat = 0.15;
+      this.std('leather', null, { color: 0x8a5636, roughness: 0.55 }, true).clearcoat = 0.15;
       this.std('bookPages', null, { color: 0xe9e2d0, roughness: 0.9 });
       this.std('books', null, { vertexColors: true, roughness: 0.7 });
       const ice = this.std('frostedPanel', null, { color: 0xf2f2f0, roughness: 0.3, transparent: true, opacity: 0.35 });
       ice.userData.noZone = true;
     });
     S('地毯與畫作', () => {
-      const r1 = T.toTextureSet(T.rugTexture(1024, { seed: 141, base: [200, 194, 182], accent: [170, 160, 146], pattern: 'lines' }), { tile: 1, anisotropy: this.anisotropy, wrap: false });
+      const r1 = T.toTextureSet(T.rugTexture(512, { seed: 141, base: [200, 194, 182], accent: [170, 160, 146], pattern: 'lines' }), { tile: 1, anisotropy: this.anisotropy, wrap: false });
       this.std('rugLiving', r1, { normalScale: 0.8 });
-      const r2 = T.toTextureSet(T.rugTexture(1024, { seed: 143, base: [112, 118, 122], accent: [168, 170, 166], pattern: 'grid' }), { tile: 1, anisotropy: this.anisotropy, wrap: false });
+      const r2 = T.toTextureSet(T.rugTexture(512, { seed: 143, base: [112, 118, 122], accent: [168, 170, 166], pattern: 'grid' }), { tile: 1, anisotropy: this.anisotropy, wrap: false });
       this.std('rugBed', r2, { normalScale: 0.8 });
-      const r3 = T.toTextureSet(T.rugTexture(512, { seed: 145, base: [180, 150, 120], accent: [120, 86, 62], pattern: 'lines', border: false }), { tile: 1, anisotropy: this.anisotropy, wrap: false });
+      const r3 = T.toTextureSet(T.rugTexture(512, { seed: 145, base: [184, 168, 148], accent: [150, 128, 106], pattern: 'grid', border: true }), { tile: 1, anisotropy: this.anisotropy, wrap: false });
       this.std('rugRunner', r3, { normalScale: 0.8 });
       const pal = [
         [[214, 205, 188], [176, 112, 78], [64, 78, 86], [198, 168, 112]],
@@ -181,7 +181,7 @@ export class MaterialLibrary {
     S('植栽與樹木', () => {
       const bark = this.tex('bark', T.barkTexture(512, { seed: 101 }), [0.8, 1.6]);
       this.std('bark', bark, { normalScale: 1.2 });
-      const leafSet = T.leafTexture(1024, { seed: 111, hue: [70, 96, 42] });
+      const leafSet = T.leafTexture(512, { seed: 111, hue: [70, 96, 42] });
       const lt = T.toTextureSet(leafSet, { tile: 1, anisotropy: this.anisotropy, wrap: false });
       const leaf = this.std('leaves', lt, { side: THREE.DoubleSide, alphaTest: 0.5, normalScale: 0.6, aoMap: false });
       leaf.shadowSide = THREE.DoubleSide;
@@ -204,7 +204,7 @@ export class MaterialLibrary {
       // Roof tops cast sun shadows with their upper face: a 40 cm thick occluder
       // instead of the zero-thickness ceiling, so no light leaks at wall/ceiling joints.
       this.std('gravel', g, { normalScale: 0.8, shadowSide: THREE.FrontSide });
-      const a = this.tex('asphalt', T.asphaltTexture(1024, { seed: 121 }), 4.0);
+      const a = this.tex('asphalt', T.asphaltTexture(512, { seed: 121 }), 4.0);
       this.std('asphalt', a, { normalScale: 0.7 });
       this.std('roadLine', null, { color: 0xd8d6cc, roughness: 0.7 });
       this.std('hills', null, { color: 0x4d5a3c, roughness: 1 });

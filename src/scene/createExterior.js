@@ -141,7 +141,7 @@ export function createExterior(ctx) {
   }
 
   // -------------------------------------------------- garden lighting ----
-  const glow = ctx.lighting.emissive(ext, { color: 0xffdcae, intensity: 12, base: 0x333333 });
+  const glow = ctx.lighting.emissive(ext, { color: 0xffdcae, intensity: 5, base: 0x333333 });
   for (const x of [0.78, 3.25]) {
     const s = kit.group(
       kit.box(0.09, 0.32, 0.09, 'darkMetal', 0, 0, 0),

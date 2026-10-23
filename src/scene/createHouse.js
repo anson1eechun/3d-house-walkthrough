@@ -74,10 +74,46 @@ function buildWall(ctx, wall, mat) {
     return mat.plaster;
   };
 
+  // Which side of the wall (+1/-1 along its normal) is outdoors here, plus the room zone
+  // on the other side. null when both sides are interior.
+  const sideAt = (a) => {
+    const probe = (s) => (along === 'x' ? zoneAt(a, 1.2, wall.at + s * (t / 2 + 0.3)) : zoneAt(wall.at + s * (t / 2 + 0.3), 1.2, a));
+    const zp = probe(1), zn = probe(-1);
+    if (zp === 'ext' && zn !== 'ext') return { out: 1, inZone: zn };
+    if (zn === 'ext' && zp !== 'ext') return { out: -1, inZone: zp };
+    return null;
+  };
+  const box = (a0, a1, y0, y1, c0, c1, fm, opts) => (along === 'x'
+    ? B.box([a0, y0, c0], [a1, y1, c1], fm, opts)
+    : B.box([c0, y0, a0], [c1, y1, a1], fm, opts));
+  const posFace = along === 'x' ? 'pz' : 'px', negFace = along === 'x' ? 'nz' : 'nx';
+  const hiddenEnds = (face, c) => (face === 'ny' && c[1] < 0.01) || (face === 'py' && c[1] >= wall.h - 0.001);
+
   const piece = (a0, a1, y0, y1) => {
     if (a1 - a0 < 1e-4 || y1 - y0 < 1e-4) return;
-    if (along === 'x') B.box([a0, y0, wall.at - t / 2], [a1, y1, wall.at + t / 2], faceMat, { collider: { tag: 'wall' } });
-    else B.box([wall.at - t / 2, y0, a0], [wall.at + t / 2, y1, a1], faceMat, { collider: { tag: 'wall' } });
+    const sd = sideAt((a0 + a1) / 2);
+    if (!sd) {
+      box(a0, a1, y0, y1, wall.at - t / 2, wall.at + t / 2, faceMat, { collider: { tag: 'wall' } });
+      return;
+    }
+    // Exterior wall: split the thickness so reveals, sills and lintels get stucco
+    // (sky-lit) on the outer half and plaster/tile (room-probe-lit) on the inner half.
+    const m = wall.at, outerFace = sd.out > 0 ? posFace : negFace, midOuter = sd.out > 0 ? negFace : posFace;
+    const innerMat = sd.inZone === 'bath' ? mat.tile : mat.plaster;
+    const outerFm = (face, c) => {
+      if (face === midOuter || hiddenEnds(face, c)) return null;
+      return face === outerFace ? exteriorMaterial(wall, c, mat) : mat.stucco;
+    };
+    const innerFm = (face, c) => {
+      if (face === outerFace || hiddenEnds(face, c)) return null;
+      return innerMat;
+    };
+    const [o0, o1] = sd.out > 0 ? [m, m + t / 2] : [m - t / 2, m];
+    const [i0, i1] = sd.out > 0 ? [m - t / 2, m] : [m, m + t / 2];
+    box(a0, a1, y0, y1, o0, o1, outerFm, { zone: 'ext' });
+    box(a0, a1, y0, y1, i0, i1, innerFm, { zone: sd.inZone });
+    if (along === 'x') ctx.collision.addBox({ minX: a0, maxX: a1, minZ: m - t / 2, maxZ: m + t / 2, minY: y0, maxY: y1, tag: 'wall' });
+    else ctx.collision.addBox({ minX: m - t / 2, maxX: m + t / 2, minZ: a0, maxZ: a1, minY: y0, maxY: y1, tag: 'wall' });
   };
 
   let cursor = wall.from;
@@ -90,25 +126,18 @@ function buildWall(ctx, wall, mat) {
   }
   piece(cursor, wall.to, 0, wall.h);
 
-  // Dark plinth band along exterior faces (skipped under door openings).
-  const exteriorSides = [];
-  for (const s of [-1, 1]) {
-    const mid = (wall.from + wall.to) / 2;
-    const p = along === 'x' ? [mid, 1, wall.at + s * (t / 2 + 0.3)] : [wall.at + s * (t / 2 + 0.3), 1, mid];
-    if (zoneAt(p[0], p[1], p[2]) === 'ext') exteriorSides.push(s);
-  }
-  for (const s of exteriorSides) {
-    let a = wall.from;
-    const segs = [];
-    for (const op of ops) { if (op.sill < 0.3) { segs.push([a, op.from]); a = op.to; } }
-    segs.push([a, wall.to]);
-    for (const [a0, a1] of segs) {
-      if (a1 - a0 < 0.02) continue;
-      const o0 = wall.at + s * t / 2, o1 = o0 + s * 0.012;
-      const z0 = Math.min(o0, o1), z1 = Math.max(o0, o1);
-      if (along === 'x') B.box([a0, 0, z0], [a1, 0.28, z1], (f) => (f === 'ny' ? null : mat.plinth), { zone: 'ext' });
-      else B.box([z0, 0, a0], [z1, 0.28, a1], (f) => (f === 'ny' ? null : mat.plinth), { zone: 'ext' });
-    }
+  // Dark plinth band along exterior faces (skipped under floor-level openings).
+  let a = wall.from;
+  const segs = [];
+  for (const op of ops) { if (op.sill < 0.3) { segs.push([a, op.from]); a = op.to; } }
+  segs.push([a, wall.to]);
+  for (const [a0, a1] of segs) {
+    if (a1 - a0 < 0.02) continue;
+    const sd = sideAt((a0 + a1) / 2);
+    if (!sd) continue;
+    const s = sd.out;
+    const o0 = wall.at + s * t / 2, o1 = o0 + s * 0.012;
+    box(a0, a1, 0, 0.28, Math.min(o0, o1), Math.max(o0, o1), (f) => (f === 'ny' ? null : mat.plinth), { zone: 'ext' });
   }
 }
 

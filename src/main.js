@@ -234,7 +234,7 @@ class App {
     // Exterior lights follow the time of day; interior lights are left as the visitor set them,
     // except at night when we switch the main rooms on if everything is dark.
     this.lighting.set('exterior', t !== 'day');
-    if (t === 'night' && !this.lighting.anyOn()) for (const id of ['living', 'kitchen', 'dining', 'hall']) this.lighting.set(id, true);
+    if (t !== 'day') for (const id of ['living', 'kitchen', 'dining', 'hall', 'livingLamp']) this.lighting.set(id, true);
     this.hud.toast('時段：' + TIME_LABEL[t]);
   }
 
