@@ -231,10 +231,11 @@ export function buildWindow(ctx, wall, opening, cfg) {
   }
   root.remove(fixed);
 
-  // Collider for floor-level glass (sill pieces of the wall block the others).
-  if (opening.sill < 0.5) {
-    if (wall.axis === 'x') ctx.collision.addBox({ minX: opening.from, maxX: opening.to, minZ: wall.at - 0.05, maxZ: wall.at + 0.05, minY: 0, maxY: y0 + H, tag: opening.id });
-    else ctx.collision.addBox({ minX: wall.at - 0.05, maxX: wall.at + 0.05, minZ: opening.from, maxZ: opening.to, minY: 0, maxY: y0 + H, tag: opening.id });
+  // Collider for floor-level glass. Higher sills are already blocked by the wall's
+  // sill piece (it reaches above the player capsule's step height).
+  if (opening.sill < 0.28) {
+    if (wall.axis === 'x') ctx.collision.addBox({ minX: opening.from, maxX: opening.to, minZ: wall.at - 0.05, maxZ: wall.at + 0.05, minY: 0, maxY: y0 + H, tag: opening.id, occludes: false });
+    else ctx.collision.addBox({ minX: wall.at - 0.05, maxX: wall.at + 0.05, minZ: opening.from, maxZ: opening.to, minY: 0, maxY: y0 + H, tag: opening.id, occludes: false });
   }
 
   if (parts.length) {
@@ -279,7 +280,7 @@ export function buildGlassWall(ctx, wall, opening) {
     g.position.set(-W / 2 + (i + 0.5) * pw, y0 + 0.035 + 0.01 + gH / 2, out * 0.01);
     fixed.add(g);
     const x0 = opening.from + i * pw, x1 = x0 + pw;
-    ctx.collision.addBox({ minX: x0, maxX: x1, minZ: wall.at - 0.06, maxZ: wall.at + 0.06, minY: 0, maxY: y0 + H, tag: 'glasswall' });
+    ctx.collision.addBox({ minX: x0, maxX: x1, minZ: wall.at - 0.06, maxZ: wall.at + 0.06, minY: 0, maxY: y0 + H, tag: 'glasswall', occludes: false });
   }
   root.updateMatrixWorld(true);
   ctx.builder.addObject(fixed);

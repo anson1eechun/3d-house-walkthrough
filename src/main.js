@@ -184,7 +184,7 @@ class App {
       if (err) this.hud.toast('無法鎖定滑鼠，請再點擊一次畫面');
     });
     window.addEventListener('keydown', (e) => {
-      if (!this.started || !this.player.locked) return;
+      if (!this.started || !(this.player.locked || this.debugInput)) return;
       if (e.repeat) return;
       switch (e.code) {
         case 'KeyF': this.interaction.primary(this.ctx); break;
@@ -217,8 +217,9 @@ class App {
     $('start').classList.add('hidden');
     this.pause.show(false);
     this.hud.show(true);
-    this.player.enabled = true;
+    this.player.enabled = 'debug';   // keyboard works without pointer lock
     this.interaction.enabled = true;
+    this.debugInput = true;
   }
 
   resetPlayer() { this.player.teleport(START.x, START.z, START.yaw, START.pitch); }

@@ -71,6 +71,15 @@ export class PlayerController {
     this.updateCamera(0);
   }
 
+  // Aim the view at a world point (used by tests and the reset view).
+  lookAt(x, y, z) {
+    const c = this.camera.position;
+    const dx = x - c.x, dy = y - c.y, dz = z - c.z;
+    this.yaw = Math.atan2(-dx, -dz);
+    this.pitch = Math.atan2(dy, Math.hypot(dx, dz));
+    this.updateCamera();
+  }
+
   update(dt) {
     let fx = 0, fz = 0;
     if (this.enabled) {

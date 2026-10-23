@@ -12,7 +12,11 @@ const _v = new THREE.Vector3(), _q = new THREE.Quaternion(), _e = new THREE.Eule
 export class ToggleFurniture extends Interactable {
   // parts: ToggleAnimation part specs; colliders: [{ object, w, d, h, y0, local:[x,z] }]
   constructor(ctx, { id, type = 'cabinet', label, meshes, parts, verbs = ['打開', '關上'], colliders = [], duration = 0.7, sound = 'drawer', reach = 2.0, onChange = null }) {
-    super({ id, type, label, meshes, reach });
+    // Every mesh of a moving part is a target, so an open drawer or a swung door
+    // can be aimed at anywhere, not only at its front panel.
+    const targets = new Set(meshes);
+    for (const p of parts) p.object.traverse(o => { if (o.isMesh) targets.add(o); });
+    super({ id, type, label, meshes: [...targets], reach });
     this.ctx = ctx; this.verbs = verbs; this.sound = sound; this.onChange = onChange;
     this.colliderSpecs = colliders;
     this.colliders = colliders.map(s => ctx.collision.addOBB({ cx: 0, cz: 0, hx: s.w / 2, hz: s.d / 2, minY: s.y0, maxY: s.y0 + s.h, dynamic: true, tag: id, occludes: false }));
