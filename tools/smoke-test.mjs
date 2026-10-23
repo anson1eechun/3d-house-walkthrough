@@ -188,6 +188,8 @@ await hold(['KeyW'], 2400); b = await pos();
 check('D16 落地推拉門開啟後可走到露台', f && f.id === 'glass-living' && b.z < -7.4, `${f && f.prompt}; z=${b.z.toFixed(2)}`);
 
 // ------------------------------------------------------ E/F: weather & state
+// one full rain cycle first: GPU uploads of first-use buffers are not leaks
+await press('KeyR'); await sleep(2500); await press('KeyR'); await sleep(1500);
 const mem0 = await p.eval(`({ g: __app.renderer.info.memory.geometries, t: __app.renderer.info.memory.textures, p: __app.renderer.info.programs.length })`);
 for (let i = 0; i < 3; i++) {
   await press('KeyR'); await sleep(2500);
@@ -201,7 +203,7 @@ await shot('rain_driveway');
 await tp(6.0, -4.6, 0.25, -0.05); await sleep(2000);
 await shot('rain_window_drops');
 const mem1 = await p.eval(`({ g: __app.renderer.info.memory.geometries, t: __app.renderer.info.memory.textures, p: __app.renderer.info.programs.length })`);
-check('F2 反覆切換天氣不累積資源', mem1.g <= mem0.g + 2 && mem1.t <= mem0.t + 2, `geo ${mem0.g}→${mem1.g}, tex ${mem0.t}→${mem1.t}, programs ${mem0.p}→${mem1.p}`);
+check('F2 反覆切換天氣不累積資源', mem1.g === mem0.g && mem1.t === mem0.t && mem1.p === mem0.p, `geo ${mem0.g}→${mem1.g}, tex ${mem0.t}→${mem1.t}, programs ${mem0.p}→${mem1.p}`);
 await press('KeyR'); await sleep(500);
 
 // time of day cycle

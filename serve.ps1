@@ -32,7 +32,7 @@ while ($listener.IsListening) {
   $file = [System.IO.Path]::GetFullPath((Join-Path $root $path.TrimStart('/')))
   $res = $ctx.Response
   try {
-    if ($file.StartsWith($root) -and (Test-Path -LiteralPath $file -PathType Leaf)) {
+    if ($file.StartsWith($root, [System.StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $file -PathType Leaf)) {
       $ext = [System.IO.Path]::GetExtension($file).ToLower()
       $res.ContentType = if ($types.ContainsKey($ext)) { $types[$ext] } else { 'application/octet-stream' }
       $res.Headers.Add('Cache-Control', 'no-cache')
@@ -42,6 +42,10 @@ while ($listener.IsListening) {
     } else {
       $res.StatusCode = 404
     }
-  } catch { $res.StatusCode = 500 }
-  $res.OutputStream.Close()
+  } catch {
+    # e.g. the browser cancelled the request mid-transfer: keep serving
+    try { $res.StatusCode = 500 } catch { }
+  } finally {
+    try { $res.OutputStream.Close() } catch { }
+  }
 }
