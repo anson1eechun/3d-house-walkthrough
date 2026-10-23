@@ -57,7 +57,7 @@ def main():
     print('  現代住宅 3D 看房  -  本機伺服器已啟動')
     print('  請用瀏覽器開啟： ' + url)
     print('  （按 Ctrl+C 結束）')
-    print('=' * 60)
+    print('=' * 60, flush=True)
     if not a.no_browser:
         try:
             webbrowser.open(url)
