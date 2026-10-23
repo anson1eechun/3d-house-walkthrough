@@ -34,7 +34,12 @@ const $ = (id) => document.getElementById(id);
 class App {
   async init() {
     const loadBar = $('load-bar'), loadLabel = $('load-label');
-    const progress = (label, f) => { loadLabel.textContent = label; loadBar.style.width = Math.round(f * 100) + '%'; };
+    const tInit = performance.now();
+    this.timings = [];
+    const progress = (label, f) => {
+      loadLabel.textContent = label; loadBar.style.width = Math.round(f * 100) + '%';
+      this.timings.push([label, Math.round(performance.now() - tInit)]);
+    };
 
     progress('檢查 WebGL2…', 0.02);
     this.gpu = checkWebGL2();
@@ -142,7 +147,16 @@ class App {
     progress('預先編譯著色器…', 0.93);
     await nextFrame();
     this.resetPlayer();
+    // Compile everything up front, including objects that start hidden (rain, flames,
+    // screens, water) so the first toggle does not stall on a shader compile.
+    const hidden = [];
+    this.scene.traverse(o => { if (!o.visible) { hidden.push(o); o.visible = true; } });
+    // Bind the HDR target first: program variants depend on the output target (linear
+    // HDR here vs sRGB for the screen), and the scene is only ever drawn off-screen.
+    this.renderer.setRenderTarget(this.post.composer.readBuffer);
     await this.renderer.compileAsync(this.scene, this.camera);
+    this.renderer.setRenderTarget(null);
+    for (const o of hidden) o.visible = false;
     this.probes.captureAll(2);
     this.rain.bakeOcclusion();
 
@@ -261,22 +275,21 @@ class App {
       if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
     }
     sun.shadow.radius = Q.shadowRadius;
-    // interior spot shadows
+    // Interior spot shadows: the caster count never changes (that would recompile every
+    // shader); quality only picks the map resolution. Maps re-render only on changes.
     for (const g of this.lighting.groups) {
       for (const { light } of g.lights) {
-        if (light.userData.shadowCandidate) {
-          const want = Q.interiorShadows;
-          if (light.castShadow !== want) {
-            light.castShadow = want;
-            if (light.shadow.map) { light.shadow.map.dispose(); light.shadow.map = null; }
-          }
+        if (!light.userData.shadowCandidate) continue;
+        light.castShadow = true;
+        if (light.shadow.mapSize.x !== Q.interiorShadowMap) {
+          light.shadow.mapSize.set(Q.interiorShadowMap, Q.interiorShadowMap);
+          if (light.shadow.map) { light.shadow.map.dispose(); light.shadow.map = null; }
         }
       }
     }
     this.post.applyQuality(Q);
     this.reflection.setQuality(Q.reflection);
     this.rain.setQuality(Q);
-    this.probes.setQuality(Q);
     this.shadowsDirty = true;
     if (!initial) this.onResize();
   }

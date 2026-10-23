@@ -17,26 +17,22 @@ export class ProbeSystem {
     this.zones = {};
     this.queue = new Map();   // zone -> delay seconds
     this.captures = 0;
-    this.setQuality({ probeSize: 128 });
-  }
-
-  setQuality(Q) {
-    if (Q.probeSize === this.size) return;
-    const r = this.ctx.renderer;
-    this.size = Q.probeSize;
-    this.pmrem?.dispose();
-    this.pmrem = new THREE.PMREMGenerator(r);
+    // Fixed resolution on every quality level: the env map size is baked into the
+    // shader defines, so changing it would recompile every interior material.
+    this.size = 128;
+    this.pmrem = new THREE.PMREMGenerator(ctx.renderer);
     for (const [id, z] of Object.entries(ZONES)) {
-      const old = this.zones[id];
-      old?.cube.dispose(); old?.env?.dispose();
       const cube = new THREE.WebGLCubeRenderTarget(this.size, { type: THREE.HalfFloatType, generateMipmaps: false });
       const cam = new THREE.CubeCamera(0.05, 150, cube);
       cam.position.set(...z.probe);
       for (const c of cam.children) { c.layers.set(LAYER.DEFAULT); c.layers.enable(LAYER.GROUND); }
       this.zones[id] = { id, cube, cam, env: null };
     }
-    // First pass right away so every zone material has a valid env map of the right size.
-    for (const id of Object.keys(this.zones)) this.capture(id);
+    // Allocate every zone's PMREM target now (black) so materials compile with their final env map.
+    for (const z of Object.values(this.zones)) {
+      z.env = this.pmrem.fromCubemap(z.cube.texture, null);
+      ctx.materials.setZoneEnv(z.id, z.env.texture);
+    }
   }
 
   requestZone(zone, delay = 0) {
@@ -83,9 +79,7 @@ export class ProbeSystem {
     mats.setZoneEnvIntensity(mats.zoneEnvIntensity);
     if (env) env.skyUniforms.uEnvCapture.value = 0;
     renderer.shadowMap.autoUpdate = prevShadow;
-    const first = !z.env;
     z.env = this.pmrem.fromCubemap(z.cube.texture, z.env);
-    if (first) this.ctx.materials.setZoneEnv(id, z.env.texture);
     this.captures++;
   }
 }
