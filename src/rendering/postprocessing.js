@@ -74,6 +74,12 @@ class HouseGTAOPass extends GTAOPass {
   }
 }
 
+// Bloom is a wide blur, so its mip chain can start at half resolution with no visible
+// difference; the composite back onto the frame still happens at full resolution.
+class HalfResBloomPass extends UnrealBloomPass {
+  setSize(w, h) { super.setSize(Math.max(2, Math.round(w / 2)), Math.max(2, Math.round(h / 2))); }
+}
+
 class ExposurePass extends Pass {
   constructor() {
     super();
@@ -168,7 +174,7 @@ export class PostProcessing {
     this.gtao.updateGtaoMaterial({ radius: 0.45, distanceExponent: 1.6, thickness: 1.2, scale: 1.0, samples: 16, distanceFallOff: 1.0 });
     this.gtao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 16 });
     this.exposure = new ExposurePass();
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(size.x, size.y), 0.22, 0.42, 2.6);
+    this.bloom = new HalfResBloomPass(new THREE.Vector2(size.x / 2, size.y / 2), 0.22, 0.42, 2.6);
     this.bloom.highPassUniforms.smoothWidth.value = 0.8;
     this.final = new FinalPass(this.exposure);
     this.fxaa = new FXAAPass();

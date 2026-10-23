@@ -38,7 +38,18 @@ export async function launch({ headless = true, width = 1600, height = 900, offl
     args.push('--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=<-loopback>;localhost;127.0.0.1');
   }
   args.push(...extraArgs, 'about:blank');
-  const proc = spawn(findChrome(), args, { stdio: ['ignore', 'ignore', 'pipe'] });
+  // Own process group so the whole Chrome tree (GPU, renderer, utility processes)
+  // can be killed together, even when the calling script crashes.
+  const detached = process.platform !== 'win32';
+  const proc = spawn(findChrome(), args, { stdio: ['ignore', 'ignore', 'pipe'], detached });
+  const killTree = () => {
+    try { if (detached) process.kill(-proc.pid, 'SIGKILL'); else proc.kill('SIGKILL'); } catch (e) { /* already gone */ }
+    try { fs.rmSync(userDir, { recursive: true, force: true }); } catch (e) { /* ignore */ }
+  };
+  process.on('exit', killTree);
+  for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { killTree(); process.exit(130); });
+  process.on('uncaughtException', (e) => { console.error(e); killTree(); process.exit(1); });
+  process.on('unhandledRejection', (e) => { console.error(e); killTree(); process.exit(1); });
   const wsUrl = await new Promise((resolve, reject) => {
     let buf = '';
     const t = setTimeout(() => reject(new Error('Chrome did not start')), 20000);
@@ -50,7 +61,8 @@ export async function launch({ headless = true, width = 1600, height = 900, offl
     proc.on('exit', (c) => reject(new Error('Chrome exited ' + c + '\n' + buf.slice(-2000))));
   });
   const browser = await connect(wsUrl);
-  browser.proc = proc;
+  // keep the old API (browser.proc.kill()) but make it take down the whole tree
+  browser.proc = { pid: proc.pid, kill: killTree };
   browser.userDir = userDir;
   return browser;
 }
