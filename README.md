@@ -212,7 +212,7 @@ macOS 與大多數 Linux 發行版皆內建 Python 3。
 
 | 編號 | 測試 | 結果 |
 |---|---|---|
-| A1 | 啟動完成，無錯誤畫面 | 通過（無頭 Chrome 約 6–15 秒，視 GPU 負載） |
+| A1 | 啟動完成，無錯誤畫面 | 通過（最近一次 7.4 秒，含測試啟動伺服器；GPU 被占用時較慢） |
 | A2 | 沒有任何外部網路請求 | 通過（65 個請求皆為 localhost） |
 | A5 | 整個測試過程沒有 JavaScript 錯誤 | 通過 |
 | C1–C4 | W 前進（1 秒 2.4 m）、斜向不加速、Shift 約 2 倍、S / A | 通過 |
@@ -231,7 +231,15 @@ macOS 與大多數 Linux 發行版皆內建 Python 3。
 | F4 | 切換畫質後位置與門的狀態不變 | 通過 |
 | B1–B2 | 房間名稱判定（9 個區域） | 通過 |
 
-測試截圖存於 `tools/test-output/`（執行測試後產生），結果存於 `tools/test-output/results.json`。
+- `node tools/soak-test.mjs --minutes=4`：長時間穩定性測試。4 分鐘內隨機移動 456 次、互動 88 次，並隨機切換天氣、時段、全屋燈光與畫質：
+  - 無 JavaScript 錯誤。
+  - 同一視角的同步幀時間：開始 32.6 ms → 結束 32.3 ms（沒有隨時間變慢）。
+  - JS heap：69.8 MB → 46.1 MB（沒有記憶體累積）。
+  - GPU 資源：貼圖數不變；幾何 384 → 388（首次使用的緩衝上傳）；著色器 61 → 64（第一次切換到低畫質時編譯的半透明玻璃 / 水面變體，只發生一次）。
+
+  此測試也找出一個效能問題並已修正：時段 / 天氣過渡期間原本每幀重繪日光陰影並反覆重拍所有房間探針，修正後過渡期間只更新所在房間的探針（節流），日光陰影只在太陽方向改變時重繪。
+
+測試截圖存於 `tools/test-output/`（執行測試後產生），結果存於 `tools/test-output/results.json` 與 `soak.json`。
 
 ### 效能（重要說明）
 測試機為 Linux + 2×RTX 2080 Ti，但**測試期間兩張顯示卡同時被另一個大型語言模型推論服務占用**（GPU 使用率 35–63%、顯示記憶體約 96% 已被占用），因此以下數字明顯偏悲觀，**不代表一般中階顯示卡的表現**：
@@ -271,6 +279,7 @@ macOS 與大多數 Linux 發行版皆內建 Python 3。
 npm start                     # = node serve.mjs
 npm run test:unit             # 碰撞單元測試（純 Node）
 npm run test:smoke            # 端到端煙霧測試（需要 Chrome / Chromium；可設 CHROME_PATH）
+node tools/soak-test.mjs --minutes=4          # 長時間穩定性測試
 node tools/smoke-test.mjs --gpu=swiftshader   # 沒有 GPU 時改用軟體渲染（很慢）
 ```
 

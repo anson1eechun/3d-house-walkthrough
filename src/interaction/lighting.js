@@ -92,7 +92,6 @@ export class LightingSystem {
         g.current += (t - g.current) * k;
         if (Math.abs(g.current - t) < 2e-3) g.current = t;
         g.apply();
-        this.ctx.markShadowsDirty?.();
       }
     }
   }

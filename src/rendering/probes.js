@@ -35,14 +35,13 @@ export class ProbeSystem {
     }
   }
 
-  requestZone(zone, delay = 0) {
+  // settle: queue a second capture afterwards so multi-bounce light converges
+  requestZone(zone, delay = 0, settle = true) {
     if (!zone || !this.zones[zone]) return;
-    // public zone is open-plan with the hallway: refresh neighbours too
     const cur = this.queue.get(zone);
     this.queue.set(zone, cur === undefined ? delay : Math.min(cur, delay));
-    // a second capture lets bounce light settle
     this._second = this._second || new Set();
-    this._second.add(zone);
+    if (settle) this._second.add(zone);
   }
 
   requestAll(delay = 0) { for (const id of Object.keys(this.zones)) this.requestZone(id, delay); }

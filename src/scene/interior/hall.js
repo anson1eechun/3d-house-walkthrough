@@ -1,4 +1,3 @@
-import * as THREE from 'three';
 import { FLOOR_Y, H_PRI } from '../layout.js';
 import { rug, plant, vase, artFrame } from './common.js';
 

@@ -2,7 +2,7 @@
 
 import * as THREE from 'three';
 import { Kit } from './kit.js';
-import { FLOOR_Y, H_PUB, H_PRI } from './layout.js';
+import { FLOOR_Y } from './layout.js';
 import { buildLiving } from './interior/living.js';
 import { buildKitchenDining } from './interior/kitchen.js';
 import { buildBedrooms } from './interior/bedrooms.js';
@@ -101,4 +101,3 @@ export class Fixtures {
   }
 }
 
-export { H_PUB, H_PRI };

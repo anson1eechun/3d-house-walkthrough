@@ -92,10 +92,10 @@ class App {
         }
         return 'ext';
       },
-      onLightsChanged: (g) => { this.probes?.requestZone(g.zone, 0.35); this.shadowsDirty = true; },
+      onLightsChanged: (g) => { this.probes?.requestZone(g.zone, 0.35); },
       onDoorState: () => { this.probes?.requestAll(0.1); },
       onWindowState: () => {},
-      onEnvironmentChanged: (final) => { this.probes?.requestAll(final ? 0 : 0.05); this.shadowsDirty = true; },
+      onEnvironmentChanged: (final) => this.onEnvironmentChanged(final),
     };
 
     progress('建立環境…', 0.52);
@@ -308,6 +308,19 @@ class App {
   }
 
   setFov(v) { this.camera.fov = v; this.camera.updateProjectionMatrix(); }
+
+  // While time of day / weather blend, only the probe of the room the visitor is in
+  // follows along (throttled); every room is refreshed once the blend has settled.
+  onEnvironmentChanged(final) {
+    if (!this.probes) return;
+    if (final) { this.probes.requestAll(0); return; }
+    const now = performance.now();
+    if (now - (this._lastEnvProbe || 0) < 700) return;
+    this._lastEnvProbe = now;
+    const c = this.camera.position;
+    const z = zoneAt(c.x, c.y, c.z);
+    if (z !== 'ext') this.probes.requestZone(z, 0, false);
+  }
 
   onResize() {
     const w = window.innerWidth, h = window.innerHeight;

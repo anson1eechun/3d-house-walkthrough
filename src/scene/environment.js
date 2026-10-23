@@ -158,12 +158,12 @@ export class EnvironmentSystem {
       const target = this.time === k ? 1 : 0;
       const d = (target - this.w[k]) * rate;
       this.w[k] += d; delta += Math.abs(d);
-      if (Math.abs(target - this.w[k]) < 1e-3) this.w[k] = target;
+      if (Math.abs(target - this.w[k]) < 3e-3) this.w[k] = target;
     }
     const rr = 1 - Math.exp(-dt * 0.45);
     const dr = (this.targetRain - this.rain) * rr;
     this.rain += dr; delta += Math.abs(dr);
-    if (Math.abs(this.targetRain - this.rain) < 1e-3) this.rain = this.targetRain;
+    if (Math.abs(this.targetRain - this.rain) < 3e-3) this.rain = this.targetRain;
 
     this.changing = delta > 1e-5;
     if (this.changing) {
@@ -196,11 +196,17 @@ export class EnvironmentSystem {
 
     this.sun.color.copy(p.sunColor);
     this.sun.intensity = p.sun;
-    this.sun.position.copy(this.sunTarget.position).addScaledVector(p.sunDir, 70);
+    // The shadow map only depends on the sun's direction and frustum, not its colour or
+    // intensity: re-render it only when those actually moved.
     const cam = this.sun.shadow.camera;
-    const e = p.shadowExtent;
-    if (cam.right !== e) { cam.left = -e; cam.right = e; cam.top = e; cam.bottom = -e; cam.updateProjectionMatrix(); }
-    this.sun.shadow.needsUpdate = true;
+    const e = Math.round(p.shadowExtent * 4) / 4;
+    const moved = !this._shadowDir || this._shadowDir.distanceToSquared(p.sunDir) > 4e-6 || cam.right !== e;
+    if (moved) {
+      this._shadowDir = (this._shadowDir || new THREE.Vector3()).copy(p.sunDir);
+      this.sun.position.copy(this.sunTarget.position).addScaledVector(p.sunDir, 70);
+      if (cam.right !== e) { cam.left = -e; cam.right = e; cam.top = e; cam.bottom = -e; cam.updateProjectionMatrix(); }
+      this.sun.shadow.needsUpdate = true;
+    }
 
     const scene = this.ctx.scene;
     scene.fog.color.copy(p.fogColor);
