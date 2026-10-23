@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>現代住宅 3D 看房</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./src/ui/style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three/build/three.module.js",
+        "three/addons/": "./vendor/three/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="viewport" tabindex="0"></canvas>
+
+  <!-- Loading -->
+  <section id="loading" class="screen">
+    <div class="brand-line"></div>
+    <h1 class="title">現代住宅<span>即時 3D 看房</span></h1>
+    <div class="progress"><div class="bar" id="load-bar"></div></div>
+    <p class="load-label" id="load-label">初始化中…</p>
+  </section>
+
+  <!-- Start -->
+  <section id="start" class="screen hidden">
+    <div class="start-grid">
+      <div class="start-left">
+        <div class="brand-line"></div>
+        <h1 class="title">現代住宅<span>即時 3D 看房與探索</span></h1>
+        <p class="lede">單層現代住宅，含客廳、餐廳、廚房、兩間臥室、浴室與前後庭院。全部場景、家具與材質皆在瀏覽器內以程式即時生成。</p>
+        <div class="start-actions">
+          <button id="btn-start" class="primary">點擊開始探索</button>
+          <label class="inline-select">畫質
+            <select id="start-quality">
+              <option value="low">低</option>
+              <option value="medium">中</option>
+              <option value="high">高</option>
+            </select>
+          </label>
+        </div>
+        <p class="gpu-info" id="gpu-info"></p>
+      </div>
+      <div class="start-right">
+        <h2>操作說明</h2>
+        <ul class="keys">
+          <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>移動</span></li>
+          <li><kbd>滑鼠</kbd><span>轉動視角</span></li>
+          <li><kbd>Shift</kbd><span>加速</span></li>
+          <li><kbd>F</kbd><span>互動（門、窗、燈、櫥櫃、抽屜、家電）</span></li>
+          <li><kbd>E</kbd><span>進階操作（調光、切換頻道等）</span></li>
+          <li><kbd>R</kbd><span>切換晴天 / 雨天</span></li>
+          <li><kbd>T</kbd><span>切換時段（白天 / 黃昏 / 夜晚）</span></li>
+          <li><kbd>L</kbd><span>全屋燈光開 / 關</span></li>
+          <li><kbd>B</kbd><span>回到起點</span></li>
+          <li><kbd>P</kbd><span>顯示效能資訊</span></li>
+          <li><kbd>Esc</kbd><span>釋放滑鼠 / 開啟選單</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- HUD -->
+  <section id="hud" class="hidden">
+    <div class="hud-room">
+      <div class="room-name" id="room-name">—</div>
+      <div class="room-sub" id="room-sub"></div>
+    </div>
+    <div class="hud-chips" id="hud-chips"></div>
+    <div class="crosshair" id="crosshair"></div>
+    <div class="prompt hidden" id="prompt"></div>
+    <div class="toast hidden" id="toast"></div>
+    <div class="hint" id="hint">F 互動　·　R 天氣　·　T 時段　·　Esc 選單</div>
+    <pre class="stats hidden" id="stats"></pre>
+  </section>
+
+  <!-- Pause / settings -->
+  <section id="pause" class="screen hidden">
+    <div class="panel">
+      <header>
+        <h2>暫停</h2>
+        <button id="btn-resume" class="primary">繼續探索</button>
+      </header>
+      <div class="panel-grid">
+        <div class="group">
+          <h3>環境</h3>
+          <div class="seg" id="seg-weather">
+            <button data-v="clear">晴天</button><button data-v="rain">雨天</button>
+          </div>
+          <div class="seg" id="seg-time">
+            <button data-v="day">白天</button><button data-v="dusk">黃昏</button><button data-v="night">夜晚</button>
+          </div>
+          <label class="slider">雨量<input type="range" id="rng-rain" min="0.2" max="1" step="0.05"><output></output></label>
+        </div>
+        <div class="group">
+          <h3>畫質</h3>
+          <div class="seg" id="seg-quality">
+            <button data-v="low">低</button><button data-v="medium">中</button><button data-v="high">高</button>
+          </div>
+          <label class="slider">曝光補償<input type="range" id="rng-exposure" min="-1.5" max="1.5" step="0.1"><output></output></label>
+          <label class="slider">滑鼠靈敏度<input type="range" id="rng-sens" min="0.3" max="2.5" step="0.1"><output></output></label>
+          <label class="slider">視野 FOV<input type="range" id="rng-fov" min="55" max="90" step="1"><output></output></label>
+          <label class="check"><input type="checkbox" id="chk-bob">走路晃動</label>
+          <label class="check"><input type="checkbox" id="chk-stats">顯示效能資訊</label>
+        </div>
+        <div class="group">
+          <h3>燈光</h3>
+          <div id="light-list" class="light-list"></div>
+          <div class="row">
+            <button id="btn-lights-on">全部開啟</button><button id="btn-lights-off">全部關閉</button>
+          </div>
+        </div>
+        <div class="group">
+          <h3>其他</h3>
+          <div class="row"><button id="btn-reset">回到起點</button></div>
+          <p class="note">在畫面任意處點擊即可回到探索模式。關閉的門會阻擋通行，以 F 開門後即可穿越。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Error -->
+  <section id="error" class="screen hidden">
+    <div class="panel narrow">
+      <h2 id="error-title">發生錯誤</h2>
+      <p id="error-detail"></p>
+      <pre id="error-trace"></pre>
+      <button onclick="location.reload()">重新載入</button>
+    </div>
+  </section>
+
+  <script>
+    // Runs before any module so failures (file://, missing import maps) still produce a message.
+    (function () {
+      function fail(title, detail) {
+        var s = document.getElementById('error');
+        document.getElementById('error-title').textContent = title;
+        document.getElementById('error-detail').textContent = detail;
+        s.classList.remove('hidden');
+        document.getElementById('loading').classList.add('hidden');
+      }
+      window.__fail = fail;
+      if (location.protocol === 'file:') {
+        fail('請透過本機伺服器開啟', '瀏覽器禁止以 file:// 載入 ES 模組。請執行專案中的 start.bat（Windows）或 start.sh（macOS / Linux），再開啟顯示的 http://localhost 網址。');
+        return;
+      }
+      if (!(HTMLScriptElement.supports && HTMLScriptElement.supports('importmap'))) {
+        fail('瀏覽器版本過舊', '需要支援 Import Maps 的瀏覽器（Chrome / Edge 89+、Firefox 108+、Safari 16.4+）。');
+        return;
+      }
+      window.addEventListener('error', function (e) {
+        if (!window.__appReady) fail('載入失敗', (e.message || '未知錯誤') + (e.filename ? '\n' + e.filename + ':' + e.lineno : ''));
+      });
+      window.addEventListener('unhandledrejection', function (e) {
+        if (!window.__appReady) fail('載入失敗', String(e.reason && (e.reason.stack || e.reason.message) || e.reason));
+      });
+    })();
+  </script>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
